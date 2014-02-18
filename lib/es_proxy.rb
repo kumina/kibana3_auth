@@ -76,22 +76,19 @@ class ESProxy < Forwarder
 	def rewrite_env
 		request = Rack::Request.new(@env)
 
-		case @env['PATH_INFO']
-		when %r{\A/_aliases/*?\z}, Router::ALIASES_PATH
+		if @env['PATH_INFO'] =~ Regexp.union(Router::INDEX_ALIASES_PATH, Router::ALIASES_PATH)
 			raise 'Must GET' unless request.get?
-			# Flag the aliases to be requested when we make the
-			# request later on
 			@env['ALIAS_REQUEST'] = true
-		when Router::SEARCH_PATH
-			rewrite_search_request
-		when %r{\A/kibana-int/dashboard/}
+		end
+
+		if @env['PATH_INFO'] =~ Regexp.union(Router::SEARCH_PATH, Router::MAPPING_PATH, Router::INDEX_ALIASES_PATH)
+			rewrite_index_names
+		end
+
+		if @env['PATH_INFO'] =~ Router::KIBANA_DB_PATH
 			privatise_dashboard
-		when %r{\A/[^/]*/_mapping/*?\z}
+		elsif @env['PATH_INFO'] =~ Router::NODES_PATH
 			raise 'Must GET' unless request.get?
-		when %r{\A/_nodes/?\z}
-			raise 'Must GET' unless request.get?
-		else
-			raise 'You should not be here, this is a bug'
 		end
 	end
 
@@ -103,7 +100,7 @@ class ESProxy < Forwarder
 	#
 	# The safety of ensuring that there are only logstash indexes that
 	# match this pattern is done in Router
-	def rewrite_search_request
+	def rewrite_index_names
 		@env['PATH_INFO'].gsub!(
 			Router::LOGSTASH_INDEX,
 			"\\1_#{self.user_id}"

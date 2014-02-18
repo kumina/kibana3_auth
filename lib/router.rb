@@ -6,20 +6,24 @@ require 'kibana'
 class Router
 	include Helpers
 
-	LOGSTASH_INDEX = %r{(logstash-[\d\.]{10})}
-	SEARCH_PATH    = %r{\A/(?:#{LOGSTASH_INDEX},?)+/_search/*?\z}
-	ALIASES_PATH   = %r{\A/(?:#{LOGSTASH_INDEX},?)+/_aliases\z}
+	LOGSTASH_INDEX     = %r{(logstash-[\d\.]{10})}
+	LOGSTASH_INDICES   = %r{(?:#{LOGSTASH_INDEX},?)+}
+
+	SEARCH_PATH        = %r{\A/#{LOGSTASH_INDICES}/_search/*?\z}
+	INDEX_ALIASES_PATH = %r{\A/#{LOGSTASH_INDICES}/_aliases\z}
+	MAPPING_PATH       = %r{\A/#{LOGSTASH_INDICES}/_mapping/field/\*?\z}
+	NODES_PATH         = %r{\A/_nodes/?\z}
+	ALIASES_PATH       = %r{\A/_aliases/*?\z}
+	KIBANA_DB_PATH     = %r{\A/kibana-int/dashboard/}
+
+	ES_PATHS = Regexp.union(SEARCH_PATH, INDEX_ALIASES_PATH,
+		MAPPING_PATH, NODES_PATH, ALIASES_PATH, KIBANA_DB_PATH)
 
 	# Evaluated in order, from top to bottom.
 	URL_MAP = [
-		[%r{\A/(?:logout|login)/*?\z}    , :upstream_login ]         ,
-		[%r{\A/_aliases/*?\z}            , :upstream_elastic_search] ,
-		[%r{\A/[^/]*/_mapping/*?\z}      , :upstream_elastic_search] ,
-		[%r{\A/_nodes/?\z}               , :upstream_elastic_search] ,
-		[SEARCH_PATH                     , :upstream_elastic_search] ,
-		[ALIASES_PATH                    , :upstream_elastic_search] ,
-		[%r{\A/kibana-int/dashboard/}    , :upstream_elastic_search] ,
-		[//                              , :upstream_kibana]         ,
+		[%r{\A/(?:logout|login)/*?\z}, :upstream_login ]         ,
+		[ES_PATHS                    , :upstream_elastic_search] ,
+		[//                          , :upstream_kibana]         ,
 	]
 
 	attr_reader :upstream_kibana, :upstream_login, :upstream_elastic_search
