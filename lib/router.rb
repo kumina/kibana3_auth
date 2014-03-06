@@ -11,7 +11,7 @@ class Router
 
 	SEARCH_PATH        = %r{\A/#{LOGSTASH_INDICES}/_search/*?\z}
 	INDEX_ALIASES_PATH = %r{\A/#{LOGSTASH_INDICES}/_aliases\z}
-	MAPPING_PATH       = %r{\A/#{LOGSTASH_INDICES}/_mapping/field/\*?\z}
+	MAPPING_PATH       = %r{\A/#{LOGSTASH_INDICES}/_mapping/*\z}
 	NODES_PATH         = %r{\A/_nodes/?\z}
 	ALIASES_PATH       = %r{\A/_aliases/*?\z}
 	KIBANA_DB_PATH     = %r{\A/kibana-int/dashboard/}
